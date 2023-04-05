@@ -2,7 +2,7 @@ import { GetItemCommand, ScanCommand, PutItemCommand, DeleteItemCommand, UpdateI
 import { marshall, unmarshall } from '@aws-sdk/util-dynamodb'
 import { v4 as uuidV4 } from 'uuid'
 
-import { dbbClient } from '../dbbClient'
+import dbbClient from './dbbClient'
 
 const TABLE_NAME = process.env.DYNAMODB_TABLE_NAME
 
@@ -23,10 +23,10 @@ async function getProduct(productId) {
 	}
 }
 
-export default async function getAllProducts() {
+async function getAllProducts() {
 	console.log('HANDLER: GET ALL PRODUCTS')
 	try {
-		params = { TableName: TABLE_NAME }
+		const params = { TableName: TABLE_NAME }
 		const { Items } = await dbbClient.send(new ScanCommand(params))
 		return (Items) ? Items.map((item) => unmarshall(item)) : {}
 	}
@@ -58,11 +58,11 @@ async function createProduct(event) {
 
 async function updateProduct(productId, productBody) {
 	console.log('HANDLER: UPDATE PRODUCT')
-	
+
 	try {
-		const requestBody = JSON.parse(event.body)
+		const requestBody = JSON.parse(productBody)
 		const bodyKeys = Object.keys(requestBody)
-		
+
 		const params = {
 			TableName: TABLE_NAME,
 			Key: marshall({ id: productId }),
@@ -71,7 +71,7 @@ async function updateProduct(productId, productBody) {
 				...acc,
 				[`#key${index}`]: key
 			}), {}),
-			ExpressionAttributeValues: marshall(objectKeys.reduce((acc, key, index) => ({
+			ExpressionAttributeValues: marshall(requestBody.reduce((acc, key, index) => ({
 				...acc,
 				[`:value${index}`]: requestBody[key]
 			}), {}))
@@ -79,7 +79,7 @@ async function updateProduct(productId, productBody) {
 
 		return dbbClient.send(new UpdateItemCommand(params))
 	}
-	catch(e) {
+	catch (e) {
 		console.error(e)
 		throw e
 	}
@@ -92,40 +92,39 @@ async function deleteProduct(productId) {
 			TableName: TABLE_NAME,
 			Key: marshall({ id: productId })
 		}
-		
+
 		return dbbClient.send(new DeleteItemCommand(params))
 	}
-	catch(e) {
+	catch (e) {
 		console.error(e)
 		throw e
 	}
 }
-
 
 export default async function handler(event) {
 	console.log(`REQUEST: ${JSON.stringify(event, undefined, 2)}`)
 	let responseBody
 
 	switch (event.httpMethod) {
-		case 'GET':
-			if (!!event.pathParameters) {
-				responseBody = await getProduct(event.pathParameters.id)
-			}
-			else {
-				responseBody = await getAllProducts()
-			}
-			break
-		case 'POST':
-			responseBody = await createProduct(event)
-			break
-		case 'PUT':
-			responseBody = await updateProduct(event.pathParameters.id, event.body)
-			break;
-		case 'DELETE':
-			responseBody = await deleteProduct(event.pathParameters.id)
-			break
-		default:
-			throw new Error(`UNSUPPORTED ROUTE METHOD: ${event.httpMethod}`)
+	case 'GET':
+		if (event.pathParameters) {
+			responseBody = await getProduct(event.pathParameters.id)
+		}
+		else {
+			responseBody = await getAllProducts()
+		}
+		break
+	case 'POST':
+		responseBody = await createProduct(event)
+		break
+	case 'PUT':
+		responseBody = await updateProduct(event.pathParameters.id, event.body)
+		break
+	case 'DELETE':
+		responseBody = await deleteProduct(event.pathParameters.id)
+		break
+	default:
+		throw new Error(`UNSUPPORTED ROUTE METHOD: ${event.httpMethod}`)
 	}
 
 	return {
