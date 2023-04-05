@@ -3,7 +3,7 @@
 	"private": "true",
 	"type": "module",
 	"scripts": {
-		"lint": "esw --config ./lint/.eslintrc.cjs --ext .js"
+		"lint": "esw --config ./lint/.eslintrc.cjs --ext .js --watch --fix --clear"
 	},
 	"dependencies": {
 		"@aws-sdk/client-dynamodb": "^3.306.0",

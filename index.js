@@ -2,7 +2,7 @@ import { GetItemCommand, ScanCommand, QueryCommand, PutItemCommand, DeleteItemCo
 import { marshall, unmarshall } from '@aws-sdk/util-dynamodb'
 import { v4 as uuidV4 } from 'uuid'
 
-import dbbClient from './dbbClient'
+import dbbClient from './dbbClient.js'
 
 const TABLE_NAME = process.env.DYNAMODB_TABLE_NAME
 
@@ -124,7 +124,7 @@ async function deleteProduct(productId) {
 	}
 }
 
-export default async function handler(event) {
+export const handler = async function handler(event) {
 	console.log(`REQUEST: ${JSON.stringify(event, undefined, 2)}`)
 	let responseBody
 
