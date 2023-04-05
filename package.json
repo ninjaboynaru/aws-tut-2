@@ -1,0 +1,9 @@
+{
+	"name": "aws-tut-2",
+	"private": "true",
+	"type": "module",
+	"dependencies": {
+		"@aws-sdk/client-dynamodb": "^3.306.0",
+		"@aws-sdk/util-dynamodb": "^3.306.0"
+	}
+}
