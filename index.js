@@ -1,4 +1,4 @@
-import { GetItemCommand, ScanCommand, PutItemCommand, DeleteItemCommand, UpdateItemCommand } from '@aws-sdk/client-dynamodb'
+import { GetItemCommand, ScanCommand, QueryCommand, PutItemCommand, DeleteItemCommand, UpdateItemCommand } from '@aws-sdk/client-dynamodb'
 import { marshall, unmarshall } from '@aws-sdk/util-dynamodb'
 import { v4 as uuidV4 } from 'uuid'
 
@@ -29,6 +29,29 @@ async function getAllProducts() {
 		const params = { TableName: TABLE_NAME }
 		const { Items } = await dbbClient.send(new ScanCommand(params))
 		return (Items) ? Items.map((item) => unmarshall(item)) : {}
+	}
+	catch (e) {
+		console.error(e)
+		throw e
+	}
+}
+
+async function getProductsByCategory(productId, queryStringParameters) {
+	console.log('HANDLER: GET PRODUCTS BY CATEGORY')
+	try {
+		const { category } = queryStringParameters
+		const params = {
+			TableName: TABLE_NAME,
+			KeyConditionExpression: 'id = :productId',
+			FilterExpression: 'contains (category, :category)',
+			ExpressionAttributeValues: {
+				':productId': { S: productId },
+				':category': { S: category }
+			}
+		}
+
+		const { Items } = await dbbClient.send(new QueryCommand(params))
+		return Items.map((item) => unmarshall(item))
 	}
 	catch (e) {
 		console.error(e)
@@ -107,6 +130,9 @@ export default async function handler(event) {
 
 	switch (event.httpMethod) {
 	case 'GET':
+		if (event.queryStringParameters) {
+			responseBody = await getProductsByCategory(event.pathParameters.id, event.queryStringParameters)
+		}
 		if (event.pathParameters) {
 			responseBody = await getProduct(event.pathParameters.id)
 		}
