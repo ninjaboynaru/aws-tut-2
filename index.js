@@ -128,34 +128,49 @@ export default async function handler(event) {
 	console.log(`REQUEST: ${JSON.stringify(event, undefined, 2)}`)
 	let responseBody
 
-	switch (event.httpMethod) {
-	case 'GET':
-		if (event.queryStringParameters) {
-			responseBody = await getProductsByCategory(event.pathParameters.id, event.queryStringParameters)
+	try {
+		switch (event.httpMethod) {
+		case 'GET':
+			if (event.queryStringParameters) {
+				responseBody = await getProductsByCategory(event.pathParameters.id, event.queryStringParameters)
+			}
+			if (event.pathParameters) {
+				responseBody = await getProduct(event.pathParameters.id)
+			}
+			else {
+				responseBody = await getAllProducts()
+			}
+			break
+		case 'POST':
+			responseBody = await createProduct(event)
+			break
+		case 'PUT':
+			responseBody = await updateProduct(event.pathParameters.id, event.body)
+			break
+		case 'DELETE':
+			responseBody = await deleteProduct(event.pathParameters.id)
+			break
+		default:
+			throw new Error(`UNSUPPORTED ROUTE METHOD: ${event.httpMethod}`)
 		}
-		if (event.pathParameters) {
-			responseBody = await getProduct(event.pathParameters.id)
-		}
-		else {
-			responseBody = await getAllProducts()
-		}
-		break
-	case 'POST':
-		responseBody = await createProduct(event)
-		break
-	case 'PUT':
-		responseBody = await updateProduct(event.pathParameters.id, event.body)
-		break
-	case 'DELETE':
-		responseBody = await deleteProduct(event.pathParameters.id)
-		break
-	default:
-		throw new Error(`UNSUPPORTED ROUTE METHOD: ${event.httpMethod}`)
-	}
 
-	return {
-		statusCode: 200,
-		headers: { 'Content-Type': 'text/plain' },
-		body: responseBody
+		return {
+			statusCode: 200,
+			body: JSON.stringify({
+				message: `SUCCESSFULLY FINISHED OPERATION: ${event.httpMethod}`,
+				data: responseBody
+			})
+		}
+	}
+	catch (e) {
+		console.error(e)
+		return {
+			statusCode: 500,
+			body: JSON.stringify({
+				message: `OPERATION FAILED: ${event.httpMethod}`,
+				errorMessage: e.message,
+				errorStack: e.stack
+			})
+		}
 	}
 }
