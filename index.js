@@ -1,5 +1,7 @@
-import { GetItemCommand, ScanCommand, PutItemCommand } from '@aws-sdk/client-dynamodb'
+import { GetItemCommand, ScanCommand, PutItemCommand, DeleteItemCommand, UpdateItemCommand } from '@aws-sdk/client-dynamodb'
 import { marshall, unmarshall } from '@aws-sdk/util-dynamodb'
+import { v4 as uuidV4 } from 'uuid'
+
 import { dbbClient } from '../dbbClient'
 
 const TABLE_NAME = process.env.DYNAMODB_TABLE_NAME
@@ -9,7 +11,7 @@ async function getProduct(productId) {
 	try {
 		const params = {
 			TableName: TABLE_NAME,
-			key: marshall({ id: productId })
+			Key: marshall({ id: productId })
 		}
 
 		const { Item } = await dbbClient.send(new GetItemCommand(params))
@@ -37,7 +39,11 @@ export default async function getAllProducts() {
 async function createProduct(event) {
 	console.log('HANDLER: CREATE PRODUCT')
 	try {
-		const requestBody = JSON.parse(event.body)
+		const requestBody = {
+			...JSON.parse(event.body),
+			id: uuidV4()
+		}
+
 		const params = {
 			TableName: TABLE_NAME,
 			Item: marshall(requestBody || {})
@@ -45,6 +51,51 @@ async function createProduct(event) {
 		return dbbClient.send(new PutItemCommand(params))
 	}
 	catch (e) {
+		console.error(e)
+		throw e
+	}
+}
+
+async function updateProduct(productId, productBody) {
+	console.log('HANDLER: UPDATE PRODUCT')
+	
+	try {
+		const requestBody = JSON.parse(event.body)
+		const bodyKeys = Object.keys(requestBody)
+		
+		const params = {
+			TableName: TABLE_NAME,
+			Key: marshall({ id: productId }),
+			UpdateExpress: `SET ${bodyKeys.map((_, index) => `#key${index} = :value${index}`)}`,
+			ExpressionAttributeNames: bodyKeys.reduce((acc, key, index) => ({
+				...acc,
+				[`#key${index}`]: key
+			}), {}),
+			ExpressionAttributeValues: marshall(objectKeys.reduce((acc, key, index) => ({
+				...acc,
+				[`:value${index}`]: requestBody[key]
+			}), {}))
+		}
+
+		return dbbClient.send(new UpdateItemCommand(params))
+	}
+	catch(e) {
+		console.error(e)
+		throw e
+	}
+}
+
+async function deleteProduct(productId) {
+	console.log('HANDLER: DELETE PRODUCT')
+	try {
+		const params = {
+			TableName: TABLE_NAME,
+			Key: marshall({ id: productId })
+		}
+		
+		return dbbClient.send(new DeleteItemCommand(params))
+	}
+	catch(e) {
 		console.error(e)
 		throw e
 	}
@@ -66,6 +117,12 @@ export default async function handler(event) {
 			break
 		case 'POST':
 			responseBody = await createProduct(event)
+			break
+		case 'PUT':
+			responseBody = await updateProduct(event.pathParameters.id, event.body)
+			break;
+		case 'DELETE':
+			responseBody = await deleteProduct(event.pathParameters.id)
 			break
 		default:
 			throw new Error(`UNSUPPORTED ROUTE METHOD: ${event.httpMethod}`)
