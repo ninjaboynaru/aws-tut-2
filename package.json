@@ -1,14 +1,15 @@
 {
-	"name": "aws-tut-2",
+	"name": "aws-tut-2-project",
 	"private": "true",
-	"type": "module",
 	"scripts": {
-		"lint": "esw --config ./lint/.eslintrc.cjs --ext .js --watch --fix --clear"
+		"lint": "esw --config ./lint/.eslintrc.js --ext .js --watch --fix --clear",
+		"deploy": "node bin/deploy.js"
 	},
 	"dependencies": {
-		"@aws-sdk/client-dynamodb": "^3.306.0",
-		"@aws-sdk/util-dynamodb": "^3.306.0",
-		"uuid": "^9.0.0"
+		"@aws-sdk/client-lambda": "^3.306.0",
+		"axios": "^1.3.5",
+		"dotenv-safe": "^8.2.0",
+		"function": "^0.6.1"
 	},
 	"devDependencies": {
 		"eslint": "^8.37.0",

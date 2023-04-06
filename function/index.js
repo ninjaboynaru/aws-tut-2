@@ -1,10 +1,17 @@
-import { GetItemCommand, ScanCommand, QueryCommand, PutItemCommand, DeleteItemCommand, UpdateItemCommand } from '@aws-sdk/client-dynamodb'
+import { GetItemCommand, ScanCommand, QueryCommand, PutItemCommand, DeleteItemCommand } from '@aws-sdk/client-dynamodb'
 import { marshall, unmarshall } from '@aws-sdk/util-dynamodb'
 import { v4 as uuidV4 } from 'uuid'
 
 import dbbClient from './dbbClient.js'
 
 const TABLE_NAME = process.env.DYNAMODB_TABLE_NAME
+
+function pingPong() {
+	return {
+		ping: 'pong',
+		statusVerificationCode: '1.2.3.4.5'
+	}
+}
 
 async function getProduct(productId) {
 	console.log('HANDLER: GET PRODUCT')
@@ -142,7 +149,13 @@ export const handler = async function handler(event) {
 				responseBody = await getProductsByCategory(event.pathParameters.id, event.queryStringParameters)
 			}
 			if (event.pathParameters) {
-				responseBody = await getProduct(event.pathParameters.id)
+				const idParameter = event.pathParameters.id
+				if (idParameter === 'ping') {
+					responseBody = pingPong()
+				}
+				else {
+					responseBody = await getProduct(event.pathParameters.id)
+				}
 			}
 			else {
 				responseBody = await getAllProducts()

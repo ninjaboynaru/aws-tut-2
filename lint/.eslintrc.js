@@ -1,10 +1,10 @@
-const rules = require('./rules/index.cjs')
+const rules = require('./rules/index.js')
 
 module.exports = {
 	parserOptions: {
 		ecmaVersion: 'latest',
 		sourceType: 'module',
-		strict: true,
+		strict: true
 	},
 	env: {
 		node: true

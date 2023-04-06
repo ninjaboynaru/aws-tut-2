@@ -7,7 +7,7 @@ const disables = {
 	'prefer-destructuring': 0,
 	'no-restricted-syntax': 0,
 	'default-case': 0,
-	'no-console': 0,
+	'no-console': 0
 }
 
 const rules = {
@@ -19,7 +19,7 @@ const rules = {
 	'linebreak-style': [2, 'unix'],
 	'prefer-const': 2,
 	'no-var': 2,
-	'object-curly-newline': [2, { consistent: true }],
+	'object-curly-newline': [2, { consistent: true }]
 }
 
 module.exports = { ...disables, ...rules }
